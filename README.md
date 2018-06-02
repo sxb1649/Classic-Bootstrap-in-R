@@ -90,3 +90,60 @@ benefits_boot		<-	benefits_raw	%>%
 #Output
 benefits_ols
 benefits_boot
+
+
+#Part2
+
+#library(ggplot2)
+library(dplyr)
+library(broom)
+library(sqldf)
+setwd("C:/data/BUAN6357/hw_2")
+getwd()
+
+#Reading the dataframe
+benefits_raw=read.csv('benefits.csv')
+#Setting the seed
+set.seed(498541152)
+
+#Running the regression models
+benefits_ols=lm(avgsal ~.-distid-schid-avgben, data=benefits_raw)
+
+#Alternate way of doing it
+#lm(avgsal ~., data=benefits_raw[,c(-1,-2,-8)])
+#Running the bootstrap
+benefits_boot		<-	benefits_raw	%>% 
+  bootstrap(750)	%>%
+  do(
+    tidy(
+      lm(avgsal ~.-distid-schid-avgben, data=.)
+    )
+  )
+
+#Output
+benefits_ols
+benefits_boot
+
+#To make the numbers readbale for elearning
+options(scipen=6)
+#after running HW1 code...run this code and get the CI values 
+#CI code for non bootstrap ols
+confint(benefits_ols)  
+
+
+#term is the column name that can be visible by tidy(benefits_ols)
+#output interpretationfor ols model  
+#for lunch ->yes, remove lunch since 0 lies within CI
+#for staff ->no, since 0 lies outside CI
+#CI code for bootstrap ols
+alpha	<-	0.05
+bootci	<-	benefits_boot		%>% 
+  group_by(term)	%>% 
+  summarize(	low	=	quantile(estimate,   alpha/2),
+             high	=	quantile(estimate, 1-alpha/2)
+  )
+bootci
+
+#output interpretation for bootstrap model
+#for lunch ->yes, remove lunch since 0 lies within CI
+#for staff ->no, since 0 lies outside CI
